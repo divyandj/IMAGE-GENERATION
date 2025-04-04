@@ -82,10 +82,10 @@ const Index = () => {
   };
 
   const handleModify = async () => {
-    if (!generatedImage) {
+    if (!currentPrompt) {  // Changed from checking generatedImage
       toast({
-        title: "No image",
-        description: "Please generate or upload an image first before modifying",
+        title: "No original prompt",
+        description: "Please generate an image first before modifying",
       });
       return;
     }
@@ -100,15 +100,15 @@ const Index = () => {
     setIsGenerating(true);
     try {
       const response = await api.post('/image/modify', {
-        original_image: generatedImage,  // Sending full URL
+        original_prompt: currentPrompt,  // Send the original prompt
         modification_prompt: modificationPrompt
       });
       const modifiedUrl = `http://localhost:5000${response.data.image}`;
       setGeneratedImage(modifiedUrl);
       setStoryData(null);
-      setCurrentPrompt(response.data.prompt);
-      setSelectedImage(modifiedUrl);  // Update selectedImage for saving
-      setSelectedPrompt(response.data.prompt);  // Update selectedPrompt for saving
+      setCurrentPrompt(response.data.prompt);  // Update with new combined prompt
+      setSelectedImage(modifiedUrl);
+      setSelectedPrompt(response.data.prompt);
       toast({
         title: "Image modified!",
         description: "Your image has been successfully modified",
@@ -122,6 +122,7 @@ const Index = () => {
       setIsGenerating(false);
     }
   };
+  
 
   const handleGenerateStory = async () => {
     if (!storyPrompt.trim()) {

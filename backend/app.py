@@ -105,46 +105,34 @@ def generate_image():
 @token_required
 def modify_image():
     data = request.get_json()
-    original_image_url = data.get('original_image')
+    original_prompt = data.get('original_prompt')  # Get from request body
     modification_prompt = data.get('modification_prompt')
-    if not original_image_url or not modification_prompt:
-        return jsonify({'error': 'Original image URL and modification prompt are required'}), 400
     
-    try:
-        # Since images are stored locally, we need to convert the URL to a local path
-        # The frontend sends http://localhost:5000/generated/filename.png
-        # We need just the filename part
-        if '/generated/' in original_image_url:
-            filename = original_image_url.split('/generated/')[-1]
-            original_image_path = os.path.join(os.getcwd(), filename)
-        else:
-            return jsonify({'error': 'Invalid image URL format'}), 400
+    if not all([original_prompt, modification_prompt]):
+        return jsonify({'error': 'Original prompt and modification prompt are required'}), 400
 
-        # Check if image exists
-        if not os.path.exists(original_image_path):
-            return jsonify({'error': 'Original image file not found'}), 404
-            
-        # Get original prompt if available, or use default
-        # Convert the URL to the format stored in DB (/generated/filename.png)
-        db_url = f"/generated/{filename}"
-        image_data = Image.find_by_url(db_url)
-        original_prompt = image_data.get('prompt', 'Unknown original context') if image_data else 'Unknown original context'
+    try:
+        # Combine prompts locally
+        combined_prompt = f"{original_prompt} {modification_prompt}"
         
-        try:
-            modified_path, modified_prompt = ImageGenerator.modify_image(
-                original_image_path, 
-                original_prompt, 
-                modification_prompt
-            )
-            if not modified_path:
-                return jsonify({'error': 'Image modification failed'}), 500
-            modified_url = f"/generated/{modified_path}"
-            return jsonify({'image': modified_url, 'prompt': modified_prompt}), 200
-        except Exception as e:
-            return jsonify({'error': f'Image modification failed: {str(e)}'}), 500
+        # Generate new image based on combined prompts
+        modified_path, modified_prompt = ImageGenerator.modify_image(
+            original_prompt=original_prompt,
+            modification_prompt=modification_prompt
+        )
+        
+        if not modified_path:
+            return jsonify({'error': 'Image modification failed'}), 500
+            
+        modified_url = f"/generated/{modified_path}"
+        return jsonify({
+            'image': modified_url,
+            'prompt': modified_prompt
+        }), 200
+        
     except Exception as e:
-        return jsonify({'error': f'Invalid image path: {str(e)}'}), 400
-     
+        return jsonify({'error': f'Image modification failed: {str(e)}'}), 500
+      
 @image_bp.route('/upload', methods=['POST'], endpoint='upload_image')
 @token_required
 def upload_image():

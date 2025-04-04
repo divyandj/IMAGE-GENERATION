@@ -50,26 +50,18 @@ class ImageGenerator:
         return None, None
 
     @staticmethod
-    def modify_image(original_image_path, original_prompt, modification_prompt):
+    def modify_image(original_prompt, modification_prompt):
         client = genai.Client(api_key=os.environ.get("GEMINI_API_KEY"))
 
-        if not os.path.exists(original_image_path):
-            raise FileNotFoundError(f"Original image not found at {original_image_path}")
-        with open(original_image_path, "rb") as f:
-            image_data = f.read()
-        mime_type = mimetypes.guess_type(original_image_path)[0] or "image/png"
-
-        combined_prompt = f"{original_prompt}, modified to {modification_prompt}"
+        # Combine the original prompt with modification instructions
+        combined_prompt = f"{original_prompt} {modification_prompt}"
+        
         model = "gemini-2.0-flash-exp-image-generation"
         contents = [
             types.Content(
                 role="user",
-                parts=[
-                    types.Part.from_text(text=combined_prompt),
-                    types.Part.from_inline_data(data=image_data, mime_type=mime_type)
-                ],
-            ),
-        ]
+                parts=[types.Part.from_text(text=combined_prompt)],
+        )]
         generate_content_config = types.GenerateContentConfig(
             response_modalities=["image", "text"],
             response_mime_type="text/plain",
@@ -89,7 +81,7 @@ class ImageGenerator:
                 file_extension = mimetypes.guess_extension(inline_data.mime_type) or ".png"
                 full_file_name = f"{file_name}{file_extension}"
                 saved_path = ImageGenerator.save_binary_file(full_file_name, inline_data.data)
-                print(f"Modified file of mime type {inline_data.mime_type} saved to: {saved_path}")
+                print(f"Modified file saved to: {saved_path}")
                 return saved_path, combined_prompt
             else:
                 print(chunk.text)
