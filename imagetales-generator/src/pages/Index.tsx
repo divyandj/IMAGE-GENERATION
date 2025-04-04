@@ -500,8 +500,8 @@ const Index = () => {
                     Result Preview
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="flex-grow p-0 flex items-center justify-center bg-muted/20 relative h-[400px] overflow-y-auto">
-                  {storyData ? (
+                <CardContent className="flex-grow p-0 bg-muted/20 relative h-[400px] overflow-y-auto">
+                    {storyData ? (
                     <div className="w-full p-4 flex flex-col gap-6">
                       <div className="text-muted-foreground">
                         <p>{storyData.introduction}</p>
