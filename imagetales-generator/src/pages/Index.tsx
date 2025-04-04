@@ -65,11 +65,13 @@ const Index = () => {
       setGeneratedImage(imageUrl);
       setStoryData(null);
       setCurrentPrompt(response.data.prompt);
+      setSelectedImage(imageUrl);  // Add this
+      setSelectedPrompt(response.data.prompt);  // Add this
       toast({
         title: "Image created!",
         description: "Your image has been successfully generated",
       });
-    } catch (error: any) {
+    } catch (error) {
       toast({
         title: "Error",
         description: error.response?.data?.error || "Failed to generate image",
@@ -83,7 +85,7 @@ const Index = () => {
     if (!generatedImage) {
       toast({
         title: "No image",
-        description: "Please generate an image first before modifying",
+        description: "Please generate or upload an image first before modifying",
       });
       return;
     }
@@ -98,18 +100,20 @@ const Index = () => {
     setIsGenerating(true);
     try {
       const response = await api.post('/image/modify', {
-        original_image: generatedImage,
+        original_image: generatedImage,  // Sending full URL
         modification_prompt: modificationPrompt
       });
       const modifiedUrl = `http://localhost:5000${response.data.image}`;
       setGeneratedImage(modifiedUrl);
       setStoryData(null);
       setCurrentPrompt(response.data.prompt);
+      setSelectedImage(modifiedUrl);  // Update selectedImage for saving
+      setSelectedPrompt(response.data.prompt);  // Update selectedPrompt for saving
       toast({
         title: "Image modified!",
         description: "Your image has been successfully modified",
       });
-    } catch (error: any) {
+    } catch (error) {
       toast({
         title: "Error",
         description: error.response?.data?.error || "Failed to modify image",
@@ -177,24 +181,26 @@ const Index = () => {
     if (!selectedImage || !selectedPrompt) {
       toast({
         title: "No image selected",
-        description: "Please select an image to save",
+        description: "Please generate or modify an image first",
       });
       return;
     }
     
     try {
-      await api.post('/image/save', {
+      const response = await api.post('/image/save', {
         title: imageTitle,
         category: imageCategory,
         url: selectedImage,
-        prompt: selectedPrompt
+        prompt: selectedPrompt  // Ensure prompt is included
       });
       toast({
         title: "Image saved!",
         description: "Your image has been added to your gallery",
       });
       setShowSaveDialog(false);
-    } catch (error: any) {
+      setImageTitle('');
+      setImageCategory('nature');
+    } catch (error) {
       toast({
         title: "Error",
         description: error.response?.data?.error || "Failed to save image",

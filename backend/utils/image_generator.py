@@ -107,7 +107,7 @@ class ImageGenerator:
                     types.Part.from_text(
                         text=f"Generate a story about '{story_prompt}'. Start with a brief introduction, "
                              f"then provide exactly {num_images} numbered scenes. Each scene should be a concise "
-                             "paragraph suitable for generating an image in a 3D cartoon animation style. "
+                             "paragraph suitable for generating an image"
                              "For each scene, generate an image. Format the output as:\n"
                              "Introduction: [text]\n"
                              "Scene 1: [text]\n"
@@ -185,7 +185,7 @@ class ImageGenerator:
             story_result['scenes'].append({
                 'text': scene_text,
                 'path': image_path,
-                'prompt': f"{scene_text}, in a 3D cartoon animation style"
+                'prompt': f"{scene_text}"
             })
 
         return story_result
