@@ -6,7 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Sparkles, Upload, Wand2, Book, ArrowRight, Image as ImageIcon, Heart, Save, Download } from "lucide-react";
+import { Sparkles, Wand2, Book, ArrowRight, Image as ImageIcon, Heart, Save, Download } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
@@ -65,8 +65,8 @@ const Index = () => {
       setGeneratedImage(imageUrl);
       setStoryData(null);
       setCurrentPrompt(response.data.prompt);
-      setSelectedImage(imageUrl);  // Add this
-      setSelectedPrompt(response.data.prompt);  // Add this
+      setSelectedImage(imageUrl);
+      setSelectedPrompt(response.data.prompt);
       toast({
         title: "Image created!",
         description: "Your image has been successfully generated",
@@ -82,7 +82,7 @@ const Index = () => {
   };
 
   const handleModify = async () => {
-    if (!currentPrompt) {  // Changed from checking generatedImage
+    if (!currentPrompt) {
       toast({
         title: "No original prompt",
         description: "Please generate an image first before modifying",
@@ -100,13 +100,13 @@ const Index = () => {
     setIsGenerating(true);
     try {
       const response = await api.post('/image/modify', {
-        original_prompt: currentPrompt,  // Send the original prompt
+        original_prompt: currentPrompt,
         modification_prompt: modificationPrompt
       });
       const modifiedUrl = `http://localhost:5000${response.data.image}`;
       setGeneratedImage(modifiedUrl);
       setStoryData(null);
-      setCurrentPrompt(response.data.prompt);  // Update with new combined prompt
+      setCurrentPrompt(response.data.prompt);
       setSelectedImage(modifiedUrl);
       setSelectedPrompt(response.data.prompt);
       toast({
@@ -122,7 +122,6 @@ const Index = () => {
       setIsGenerating(false);
     }
   };
-  
 
   const handleGenerateStory = async () => {
     if (!storyPrompt.trim()) {
@@ -192,7 +191,7 @@ const Index = () => {
         title: imageTitle,
         category: imageCategory,
         url: selectedImage,
-        prompt: selectedPrompt  // Ensure prompt is included
+        prompt: selectedPrompt
       });
       toast({
         title: "Image saved!",
@@ -230,31 +229,6 @@ const Index = () => {
         title: "Download failed",
         description: "Could not download the image",
       });
-    }
-  };
-
-  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files.length > 0) {
-      const formData = new FormData();
-      formData.append('file', e.target.files[0]);
-      try {
-        const response = await api.post('/image/upload', formData, {
-          headers: { 'Content-Type': 'multipart/form-data' }
-        });
-        const imageUrl = `http://localhost:5000${response.data.url}`;
-        setGeneratedImage(imageUrl);
-        setStoryData(null);
-        setCurrentPrompt("Uploaded image");
-        toast({
-          title: "Image uploaded",
-          description: "Your image is ready for editing",
-        });
-      } catch (error: any) {
-        toast({
-          title: "Error",
-          description: error.response?.data?.error || "Failed to upload image",
-        });
-      }
     }
   };
 
@@ -301,7 +275,7 @@ const Index = () => {
           onValueChange={setActiveTab}
         >
           <motion.div variants={itemVariants}>
-            <TabsList className="grid grid-cols-4 mb-8">
+            <TabsList className="grid grid-cols-3 mb-8">
               <TabsTrigger value="create" className="flex items-center gap-2">
                 <Wand2 className="h-4 w-4" />
                 <span className="hidden sm:inline">Create</span>
@@ -309,10 +283,6 @@ const Index = () => {
               <TabsTrigger value="modify" className="flex items-center gap-2">
                 <Sparkles className="h-4 w-4" />
                 <span className="hidden sm:inline">Modify</span>
-              </TabsTrigger>
-              <TabsTrigger value="upload" className="flex items-center gap-2">
-                <Upload className="h-4 w-4" />
-                <span className="hidden sm:inline">Upload</span>
               </TabsTrigger>
               <TabsTrigger value="story" className="flex items-center gap-2">
                 <Book className="h-4 w-4" />
@@ -335,13 +305,11 @@ const Index = () => {
                   <CardTitle>
                     {activeTab === 'create' && "Text to Image"}
                     {activeTab === 'modify' && "Modify Image"}
-                    {activeTab === 'upload' && "Upload Image"}
                     {activeTab === 'story' && "Image Story"}
                   </CardTitle>
                   <CardDescription>
                     {activeTab === 'create' && "Generate an image from your description"}
                     {activeTab === 'modify' && "Refine and transform existing images"}
-                    {activeTab === 'upload' && "Upload and edit your own images"}
                     {activeTab === 'story' && "Create a visual story with AI"}
                   </CardDescription>
                 </CardHeader>
@@ -377,43 +345,6 @@ const Index = () => {
                         onChange={(e) => setModificationPrompt(e.target.value)}
                       />
                     </div>
-                  </TabsContent>
-                  <TabsContent value="upload" className="mt-0">
-                    <motion.label
-                      whileHover={{ y: -5, boxShadow: "0 10px 25px -5px rgba(0, 0, 0, 0.1)" }}
-                      htmlFor="image-upload"
-                      className="flex flex-col items-center justify-center w-full h-[180px] rounded-lg cursor-pointer bg-muted/50 border border-dashed border-muted hover:bg-muted/70 transition-all"
-                    >
-                      {generatedImage ? (
-                        <img 
-                          src={generatedImage} 
-                          alt="Uploaded image" 
-                          className="h-full object-contain rounded-md" 
-                        />
-                      ) : (
-                        <div className="flex flex-col items-center justify-center pt-5 pb-6">
-                          <motion.div
-                            animate={{ y: [0, -10, 0] }}
-                            transition={{ duration: 2, repeat: Infinity, repeatType: "loop" }}
-                          >
-                            <Upload className="h-10 w-10 text-muted-foreground mb-2" />
-                          </motion.div>
-                          <p className="text-sm text-muted-foreground">
-                            <span className="font-semibold">Click to upload</span> or drag and drop
-                          </p>
-                          <p className="text-xs text-muted-foreground">
-                            PNG, JPG, or WEBP (MAX. 10MB)
-                          </p>
-                        </div>
-                      )}
-                      <Input 
-                        id="image-upload" 
-                        type="file" 
-                        className="hidden" 
-                        accept="image/*" 
-                        onChange={handleImageUpload}
-                      />
-                    </motion.label>
                   </TabsContent>
                   <TabsContent value="story" className="mt-0">
                     <div className="space-y-4">
@@ -479,7 +410,6 @@ const Index = () => {
                           <Wand2 className="h-4 w-4 mr-2" />
                           {activeTab === 'create' && "Generate Image"}
                           {activeTab === 'modify' && "Modify Image"}
-                          {activeTab === 'upload' && "Edit Image"}
                           {activeTab === 'story' && "Generate Story"}
                         </>
                       )}
@@ -632,7 +562,7 @@ const Index = () => {
         </motion.h2>
         <motion.div 
           variants={containerVariants}
-          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8"
+          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"
         >
           <FeatureCard 
             icon={<Wand2 className="h-8 w-8" />}
@@ -643,11 +573,6 @@ const Index = () => {
             icon={<Sparkles className="h-8 w-8" />}
             title="Image Modification"
             description="Refine and transform existing images with simple text prompts"
-          />
-          <FeatureCard 
-            icon={<Upload className="h-8 w-8" />}
-            title="Image Upload"
-            description="Upload your own images and enhance them with AI capabilities"
           />
           <FeatureCard 
             icon={<Book className="h-8 w-8" />}
@@ -754,4 +679,4 @@ const FeatureCard = ({
   );
 };
 
-export default Index; 
+export default Index;

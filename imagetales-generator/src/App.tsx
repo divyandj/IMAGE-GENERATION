@@ -11,6 +11,7 @@ import Profile from "./pages/Profile";
 import NotFound from "./pages/NotFound";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
+import AIDetection from "./pages/AIDetection";
 import Navbar from "./components/Navbar";
 
 const queryClient = new QueryClient({
@@ -34,6 +35,7 @@ const AppRoutes = () => {
         <Route path="/profile" element={<Profile />} />
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Signup />} />
+        <Route path="/ai-detection" element={<AIDetection />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
     </AnimatePresence>

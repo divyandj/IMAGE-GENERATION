@@ -132,6 +132,9 @@ def modify_image():
         
     except Exception as e:
         return jsonify({'error': f'Image modification failed: {str(e)}'}), 500
+    
+
+
       
 @image_bp.route('/upload', methods=['POST'], endpoint='upload_image')
 @token_required
@@ -233,6 +236,25 @@ def like_image(image_id):
         {'$set': {'likes': image['likes'] + 1 if image['likes'] == 0 else image['likes'] - 1}}
     )
     return jsonify({'message': 'Like toggled'}), 200
+
+@app.route('/analyze-image', methods=['POST'])
+def analyze_image():
+    if 'image' not in request.files:
+        return jsonify({'error': 'No image file provided'}), 400
+
+    image = request.files['image']
+    if image.filename == '':
+        return jsonify({'error': 'Invalid file name'}), 400
+
+    filename = secure_filename(image.filename)
+    file_path = os.path.join(Config.UPLOAD_FOLDER, filename)
+    image.save(file_path)
+
+    # Analyze the image
+    analysis_result = ImageGenerator.analyze_image(file_path)
+
+    return jsonify(analysis_result), 200
+
 
 app.register_blueprint(auth_bp, url_prefix='/auth')
 app.register_blueprint(image_bp, url_prefix='/image')

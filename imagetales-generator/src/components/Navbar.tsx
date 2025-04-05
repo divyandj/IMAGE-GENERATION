@@ -1,5 +1,5 @@
 import React from 'react';
-import { Moon, Sun, Home, Image as ImageIcon, BookOpen, User } from 'lucide-react';
+import { Moon, Sun, Home, Image as ImageIcon, BookOpen, User, ScanEye } from 'lucide-react';
 import { useTheme } from "@/components/theme-provider";
 import { Button } from '@/components/ui/button';
 import { NavigationMenu, NavigationMenuList, NavigationMenuItem, NavigationMenuLink, navigationMenuTriggerStyle } from '@/components/ui/navigation-menu';
@@ -72,6 +72,18 @@ const Navbar = () => {
                   })}>
                     <BookOpen className="h-4 w-4 mr-2" />
                     Docs
+                  </NavigationMenuLink>
+                </motion.div>
+              </Link>
+            </NavigationMenuItem>
+            <NavigationMenuItem>
+              <Link to="/ai-detection">
+                <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                  <NavigationMenuLink className={navigationMenuTriggerStyle({
+                    className: isActive('/ai-detection') ? 'bg-muted' : ''
+                  })}>
+                    <ScanEye className="h-4 w-4 mr-2" />
+                    AI Detection
                   </NavigationMenuLink>
                 </motion.div>
               </Link>
