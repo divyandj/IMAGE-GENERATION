@@ -23,6 +23,7 @@ interface ImageData {
   url: string;
   created_at: string;
   likes: number;
+  prompt?: string;  // Add this line
 }
 
 const ProfilePage = () => {
@@ -66,7 +67,7 @@ const ProfilePage = () => {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
-        <motion.div 
+        <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
@@ -78,27 +79,34 @@ const ProfilePage = () => {
               <CardDescription>Your personal information</CardDescription>
             </CardHeader>
             <CardContent className="flex flex-col items-center pt-4">
-              <motion.div 
+              <motion.div
                 whileHover={{ scale: 1.05 }}
                 transition={{ type: "spring", stiffness: 400, damping: 10 }}
               >
                 <Avatar className="h-24 w-24 mb-4">
-                  <AvatarFallback>{user?.username?.[0] || 'U'}</AvatarFallback>
+                  <AvatarFallback>{user?.username?.[0] || "U"}</AvatarFallback>
                 </Avatar>
               </motion.div>
               <h3 className="text-xl font-medium mb-1">{user?.username}</h3>
               <p className="text-muted-foreground mb-4">{user?.email}</p>
               <div className="flex gap-2 mb-2">
-                <Badge variant="outline">{user?.plan || 'Free'} Plan</Badge>
+                <Badge variant="outline">{user?.plan || "Free"} Plan</Badge>
                 <Badge variant="secondary">{user?.credits || 0} Credits</Badge>
               </div>
             </CardContent>
             <CardFooter className="flex flex-col gap-2">
-              <Button variant="outline" className="w-full flex justify-between items-center">
+              <Button
+                variant="outline"
+                className="w-full flex justify-between items-center"
+              >
                 <Settings className="h-4 w-4" />
                 <span className="flex-grow text-center">Account Settings</span>
               </Button>
-              <Button variant="ghost" className="w-full flex justify-between items-center text-muted-foreground" onClick={handleLogout}>
+              <Button
+                variant="ghost"
+                className="w-full flex justify-between items-center text-muted-foreground"
+                onClick={handleLogout}
+              >
                 <LogOut className="h-4 w-4" />
                 <span className="flex-grow text-center">Sign Out</span>
               </Button>
@@ -106,7 +114,7 @@ const ProfilePage = () => {
           </Card>
         </motion.div>
 
-        <motion.div 
+        <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
@@ -115,24 +123,31 @@ const ProfilePage = () => {
           <Card className="h-full">
             <CardHeader>
               <CardTitle>Your Activity</CardTitle>
-              <CardDescription>Recent generations and saved images</CardDescription>
+              <CardDescription>
+                Recent generations and saved images
+              </CardDescription>
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                <motion.div whileHover={{ y: -5 }} className="flex flex-col gap-1">
+                <motion.div
+                  whileHover={{ y: -5 }}
+                  className="flex flex-col gap-1"
+                >
                   <div className="flex items-center gap-2 mb-2">
                     <ImageIcon className="h-4 w-4 text-primary" />
                     <h4 className="font-medium">Total Creations</h4>
                   </div>
                   <p className="text-3xl font-bold">{images.length}</p>
-                  <p className="text-sm text-muted-foreground">Images in your gallery</p>
+                  <p className="text-sm text-muted-foreground">
+                    Images in your gallery
+                  </p>
                 </motion.div>
               </div>
 
               <h3 className="text-lg font-medium mb-3 mt-6">Recent Activity</h3>
               <div className="space-y-3">
                 {images.slice(0, 3).map((image) => (
-                  <motion.div 
+                  <motion.div
                     key={image.id}
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
@@ -141,24 +156,49 @@ const ProfilePage = () => {
                     className="flex items-center gap-3 p-3 rounded-lg border hover:bg-accent/50 transition-colors"
                   >
                     <div className="w-12 h-12 rounded overflow-hidden">
-                      <img src={image.url} alt={image.title} className="w-full h-full object-cover" />
+                      <img
+                        // src={image.url}
+                        src={`http://localhost:5000${image.url}`}
+                        alt={image.title}
+                        className="w-full h-full object-cover"
+                        onError={(e) => {
+                          console.error('Failed to load image:', image.url);
+                          (e.target as HTMLImageElement).style.display = 'none';
+                        }}
+                      />
                     </div>
                     <div className="flex-grow">
                       <h4 className="font-medium">{image.title}</h4>
-                      <div className="flex items-center gap-2">
+
+                      {image.prompt && (
+                        <p className="text-xs text-muted-foreground line-clamp-1">
+                          {image.prompt}
+                        </p>
+                      )}
+
+                      <div className="flex items-center gap-2 mt-1">
                         <Clock className="h-3 w-3 text-muted-foreground" />
                         <span className="text-xs text-muted-foreground">
                           {new Date(image.created_at).toLocaleDateString()}
                         </span>
+                        <Badge variant="outline" className="text-xs">
+                          {image.category}
+                        </Badge>
                       </div>
                     </div>
-                    <Button variant="ghost" size="sm">View</Button>
+                    <Button variant="ghost" size="sm">
+                      View
+                    </Button>
                   </motion.div>
                 ))}
               </div>
             </CardContent>
             <CardFooter>
-              <Button variant="outline" className="w-full" onClick={() => navigate('/gallery')}>
+              <Button
+                variant="outline"
+                className="w-full"
+                onClick={() => navigate("/gallery")}
+              >
                 View All Activity
               </Button>
             </CardFooter>

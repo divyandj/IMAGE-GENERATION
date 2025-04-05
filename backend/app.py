@@ -20,6 +20,8 @@ if not os.path.exists(Config.UPLOAD_FOLDER):
 @app.route('/generated/<path:filename>')
 def serve_generated_image(filename):
     return send_from_directory(os.getcwd(), filename)
+        # return send_from_directory(Config.GENERATED_IMAGES_FOLDER, filename)
+
 
 auth_bp = Blueprint('auth', __name__)
 
@@ -96,9 +98,34 @@ def generate_image():
         image_path, generated_prompt = ImageGenerator.generate_image(prompt)
         if not image_path:
             return jsonify({'error': 'Image generation failed'}), 500
-        image_url = f"/generated/{image_path}"
-        return jsonify({'image': image_url, 'prompt': generated_prompt}), 200
+        
+         # 2. Extract just the filename from the path
+        filename = os.path.basename(image_path)
+        
+         # Auto-save the generated image
+        title = f"Generated: {prompt[:50]}"  # Truncate if too long
+        image_id = Image.create(
+            user_id=request.user_id,
+            title=title,
+            category="generated",
+            url=f"/generated/{filename}",
+            prompt=generated_prompt,
+             created_at=datetime.utcnow(),  # Add timestamp
+            is_generated=True
+        )
+
+        # image_url = f"/generated/{image_path}"
+        # return jsonify({'image': image_url, 'prompt': generated_prompt}), 200
+
+        # 4. Return the URL that matches your serving route
+        return jsonify({
+            'image': f"/generated/{filename}",
+            'prompt': generated_prompt,
+            'image_id': str(image_id)  # Useful for client-side reference
+        }), 200
+    
     except Exception as e:
+        app.logger.error(f"Image generation failed: {str(e)}")
         return jsonify({'error': str(e)}), 500
 
 @image_bp.route('/modify', methods=['POST'], endpoint='modify_image')

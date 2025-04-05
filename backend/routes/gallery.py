@@ -24,7 +24,10 @@ def get_user_images():
         'title': img['title'],
         'category': img['category'],
         'url': img['url'],
-        'likes': img['likes']
+        'likes': img['likes'],
+        'prompt': img.get('prompt', ''),
+        'created_at': img['created_at'].strftime('%Y-%m-%dT%H:%M:%SZ'),
+        'is_generated': img.get('is_generated', False)
     } for img in images]), 200
 
 @gallery_bp.route('/like/<image_id>', methods=['POST'])
