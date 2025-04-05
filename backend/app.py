@@ -110,7 +110,7 @@ def generate_image():
             category="generated",
             url=f"/generated/{filename}",
             prompt=generated_prompt,
-             created_at=datetime.utcnow(),  # Add timestamp
+            #  created_at=datetime.now(datetime.timezone.utc),  # Add timestamp
             is_generated=True
         )
 

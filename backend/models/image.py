@@ -27,7 +27,7 @@ class Image:
             'url': url,
             'prompt': prompt,
             'likes': 0,
-            'created_at': datetime.utcnow(),
+            # 'created_at': datetime.utcnow(),
             'is_generated': is_generated,
             'views': 0
         }
