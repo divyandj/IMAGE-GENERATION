@@ -2,12 +2,13 @@ from pymongo import MongoClient
 from config import Config
 from datetime import datetime
 from bson.objectid import ObjectId
+from datetime import datetime, timezone
 
 class Image:
     collection = MongoClient(Config.MONGO_URI).imagetales.images
 
     @classmethod
-    def create(cls, user_id, title, category, url, prompt, is_generated=True):
+    def create(cls, user_id, title, category, url, prompt, is_generated=True, created_at=None):
         """
         Create a new image record
         Args:
@@ -21,15 +22,15 @@ class Image:
             The inserted image ID
         """
         image_data = {
-            'user_id': ObjectId(user_id),
-            'title': title,
-            'category': category,
-            'url': url,
-            'prompt': prompt,
-            'likes': 0,
-            # 'created_at': datetime.utcnow(),
-            'is_generated': is_generated,
-            'views': 0
+        'user_id': ObjectId(user_id),
+        'title': title,
+        'category': category,
+        'url': url,
+        'prompt': prompt,
+        'likes': 0,
+        'created_at': created_at or datetime.now(timezone.utc),
+        'is_generated': is_generated,
+        'views': 0
         }
         result = cls.collection.insert_one(image_data)
         return result.inserted_id

@@ -9,6 +9,7 @@ from config import Config
 from models.user import User
 from models.image import Image
 from utils.image_generator import ImageGenerator
+from datetime import datetime, timezone
 
 app = Flask(__name__)
 app.config.from_object(Config)
@@ -111,6 +112,7 @@ def generate_image():
             url=f"/generated/{filename}",
             prompt=generated_prompt,
             #  created_at=datetime.now(datetime.timezone.utc),  # Add timestamp
+            created_at = datetime.now(timezone.utc),
             is_generated=True
         )
 

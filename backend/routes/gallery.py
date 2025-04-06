@@ -19,6 +19,23 @@ def get_all_images():
 @token_required
 def get_user_images():
     images = Image.find_by_user(request.user_id)
+    # return jsonify([{
+    #     'id': str(img['_id']),
+    #     'title': img['title'],
+    #     'category': img['category'],
+    #     'url': img['url'],
+    #     'likes': img['likes'],
+    #     'prompt': img.get('prompt', ''),
+    #     # 'created_at': img['created_at'].isoformat(),
+    #     'created_at': img.get('created_at').isoformat() if img.get('created_at') else '',
+    #     'is_generated': img.get('is_generated', False)
+    # } for img in images]), 200
+
+    def format_datetime(dt):
+        if isinstance(dt, datetime):
+            return dt.isoformat()
+        return str(dt) if dt else ""
+
     return jsonify([{
         'id': str(img['_id']),
         'title': img['title'],
@@ -26,8 +43,8 @@ def get_user_images():
         'url': img['url'],
         'likes': img['likes'],
         'prompt': img.get('prompt', ''),
-        # 'created_at': img['created_at'].strftime('%Y-%m-%dT%H:%M:%SZ'),
-        'is_generated': img.get('is_generated', False)
+        'is_generated': img.get('is_generated', False),
+        'created_at': format_datetime(img.get('created_at'))
     } for img in images]), 200
 
 @gallery_bp.route('/like/<image_id>', methods=['POST'])

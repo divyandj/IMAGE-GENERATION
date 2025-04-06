@@ -1,12 +1,19 @@
-import React, { useEffect, useState } from 'react';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import React, { useEffect, useState } from "react";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { User, Settings, ImageIcon, Heart, Clock, LogOut } from "lucide-react";
 import { motion } from "framer-motion";
-import api from '../api/client';
-import { useNavigate } from 'react-router-dom';
+import api from "../api/client";
+import { useNavigate } from "react-router-dom";
 
 interface UserData {
   _id: string;
@@ -23,7 +30,7 @@ interface ImageData {
   url: string;
   created_at: string;
   likes: number;
-  prompt?: string;  // Add this line
+  prompt?: string; // Add this line
 }
 
 const ProfilePage = () => {
@@ -34,21 +41,21 @@ const ProfilePage = () => {
   useEffect(() => {
     const fetchProfile = async () => {
       try {
-        const userResponse = await api.get('/auth/profile');
-        const imagesResponse = await api.get('/gallery/user');
+        const userResponse = await api.get("/auth/profile");
+        const imagesResponse = await api.get("/gallery/user");
         setUser(userResponse.data);
         setImages(imagesResponse.data);
       } catch (error) {
-        console.error('Failed to fetch profile:', error);
-        navigate('/login'); // Redirect to login if not authenticated
+        console.error("Failed to fetch profile:", error);
+        navigate("/login"); // Redirect to login if not authenticated
       }
     };
     fetchProfile();
   }, [navigate]);
 
   const handleLogout = () => {
-    localStorage.removeItem('token');
-    navigate('/login');
+    localStorage.removeItem("token");
+    navigate("/login");
   };
 
   return (
@@ -146,51 +153,57 @@ const ProfilePage = () => {
 
               <h3 className="text-lg font-medium mb-3 mt-6">Recent Activity</h3>
               <div className="space-y-3">
-                {images.slice(0, 3).map((image) => (
-                  <motion.div
-                    key={image.id}
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    transition={{ delay: 0.3 + images.indexOf(image) * 0.1 }}
-                    whileHover={{ x: 5 }}
-                    className="flex items-center gap-3 p-3 rounded-lg border hover:bg-accent/50 transition-colors"
-                  >
-                    <div className="w-12 h-12 rounded overflow-hidden">
-                      <img
-                        // src={image.url}
-                        src={`http://localhost:5000${image.url}`}
-                        alt={image.title}
-                        className="w-full h-full object-cover"
-                        onError={(e) => {
-                          console.error('Failed to load image:', image.url);
-                          (e.target as HTMLImageElement).style.display = 'none';
-                        }}
-                      />
-                    </div>
-                    <div className="flex-grow">
-                      <h4 className="font-medium">{image.title}</h4>
+                {images.slice(0, 3).map((image) => {
+                  console.log("created_at:", image.created_at); // ✅ move here
 
-                      {image.prompt && (
-                        <p className="text-xs text-muted-foreground line-clamp-1">
-                          {image.prompt}
-                        </p>
-                      )}
-
-                      <div className="flex items-center gap-2 mt-1">
-                        <Clock className="h-3 w-3 text-muted-foreground" />
-                        <span className="text-xs text-muted-foreground">
-                          {new Date(image.created_at).toLocaleDateString()}
-                        </span>
-                        <Badge variant="outline" className="text-xs">
-                          {image.category}
-                        </Badge>
+                  return (
+                    <motion.div
+                      key={image.id}
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      transition={{ delay: 0.3 + images.indexOf(image) * 0.1 }}
+                      whileHover={{ x: 5 }}
+                      className="flex items-center gap-3 p-3 rounded-lg border hover:bg-accent/50 transition-colors"
+                    >
+                      <div className="w-12 h-12 rounded overflow-hidden">
+                        <img
+                          // src={image.url}
+                          src={`http://localhost:5000${image.url}`}
+                          alt={image.title}
+                          className="w-full h-full object-cover"
+                          onError={(e) => {
+                            console.error("Failed to load image:", image.url);
+                            (e.target as HTMLImageElement).style.display =
+                              "none";
+                          }}
+                        />
                       </div>
-                    </div>
-                    <Button variant="ghost" size="sm">
-                      View
-                    </Button>
-                  </motion.div>
-                ))}
+                      <div className="flex-grow">
+                        <h4 className="font-medium">{image.title}</h4>
+
+                        {image.prompt && (
+                          <p className="text-xs text-muted-foreground line-clamp-1">
+                            {image.prompt}
+                          </p>
+                        )}
+
+                        <div className="flex items-center gap-2 mt-1">
+                          <Clock className="h-3 w-3 text-muted-foreground" />
+                          <span className="text-xs text-muted-foreground">
+                            {/* {new Date(image.created_at).toLocaleDateString()} */}
+                            {new Date(image.created_at).toLocaleString()}
+                          </span>
+                          <Badge variant="outline" className="text-xs">
+                            {image.category}
+                          </Badge>
+                        </div>
+                      </div>
+                      <Button variant="ghost" size="sm">
+                        View
+                      </Button>
+                    </motion.div>
+                  );
+                })}
               </div>
             </CardContent>
             <CardFooter>
