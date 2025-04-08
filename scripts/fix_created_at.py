@@ -1,3 +1,4 @@
+# run this in case created_at is missing from any image in images collection
 import sys
 import os
 from datetime import datetime, timezone
