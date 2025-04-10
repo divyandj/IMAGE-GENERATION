@@ -4,6 +4,8 @@ import mimetypes
 import time
 from google import genai
 from google.genai import types
+import json
+from google.genai.errors import ServerError
 
 class ImageGenerator:
 
@@ -11,10 +13,7 @@ class ImageGenerator:
     def analyze_image(file_path):
         client = genai.Client(api_key=os.environ.get("GEMINI_API_KEY"))
 
-        # Upload the image
         uploaded_file = client.files.upload(file=file_path)
-
-        # Define the model and request
         model = "gemini-2.0-flash"
         contents = [
             types.Content(
@@ -39,8 +38,6 @@ class ImageGenerator:
         ]
 
         generate_content_config = types.GenerateContentConfig(response_mime_type="text/plain")
-
-        # Get response
         response_text = ""
         for chunk in client.models.generate_content_stream(
             model=model,
@@ -49,25 +46,22 @@ class ImageGenerator:
         ):
             response_text += chunk.text
 
-        # Extract JSON output
         try:
-            import json
             ai_result = json.loads(response_text.strip("```json").strip("```"))
             return ai_result
-        except json.JSONDecodeError:
+        except json.JSONDecodeError as e:
+            print(f"JSON Decode Error: {e}")
             return {"error": "Failed to analyze the image"}
 
     @staticmethod
     def save_binary_file(file_name, data):
-        f = open(file_name, "wb")
-        f.write(data)
-        f.close()
+        with open(file_name, "wb") as f:
+            f.write(data)
         return file_name
 
     @staticmethod
-    def generate_image(prompt):
+    def generate_image(prompt, max_retries=3, initial_delay=5):
         client = genai.Client(api_key=os.environ.get("GEMINI_API_KEY"))
-
         model = "gemini-2.0-flash-exp-image-generation"
         contents = [
             types.Content(
@@ -80,31 +74,46 @@ class ImageGenerator:
             response_mime_type="text/plain",
         )
 
-        for chunk in client.models.generate_content_stream(
-            model=model,
-            contents=contents,
-            config=generate_content_config,
-        ):
-            if not chunk.candidates or not chunk.candidates[0].content or not chunk.candidates[0].content.parts:
-                continue
-            if chunk.candidates[0].content.parts[0].inline_data:
-                timestamp = int(time.time())
-                file_name = f"generated_image_{timestamp}"
-                inline_data = chunk.candidates[0].content.parts[0].inline_data
-                file_extension = mimetypes.guess_extension(inline_data.mime_type) or ".png"
-                full_file_name = f"{file_name}{file_extension}"
-                saved_path = ImageGenerator.save_binary_file(full_file_name, inline_data.data)
-                print(f"File of mime type {inline_data.mime_type} saved to: {saved_path}")
-                return saved_path, prompt
-            else:
-                print(chunk.text)
+        for attempt in range(max_retries):
+            try:
+                for chunk in client.models.generate_content_stream(
+                    model=model,
+                    contents=contents,
+                    config=generate_content_config,
+                ):
+                    if not chunk.candidates or not chunk.candidates[0].content or not chunk.candidates[0].content.parts:
+                        continue
+                    if chunk.candidates[0].content.parts[0].inline_data:
+                        timestamp = int(time.time())
+                        file_name = f"generated_image_{timestamp}"
+                        inline_data = chunk.candidates[0].content.parts[0].inline_data
+                        file_extension = mimetypes.guess_extension(inline_data.mime_type) or ".png"
+                        full_file_name = f"{file_name}{file_extension}"
+                        saved_path = ImageGenerator.save_binary_file(full_file_name, inline_data.data)
+                        print(f"File of mime type {inline_data.mime_type} saved to: {saved_path}")
+                        return saved_path, prompt
+                    else:
+                        print(chunk.text)
+                return None, None
+
+            except ServerError as e:
+                if e.status_code == 503:
+                    if attempt < max_retries - 1:
+                        delay = initial_delay * (2 ** attempt)  # Exponential backoff
+                        print(f"503 Error: Model overloaded. Retrying in {delay} seconds... (Attempt {attempt + 1}/{max_retries})")
+                        time.sleep(delay)
+                        continue
+                    else:
+                        print(f"503 Error: Model overloaded. Max retries ({max_retries}) exceeded.")
+                        return None, None
+                else:
+                    raise  # Re-raise if it's a different server error
+
         return None, None
 
     @staticmethod
     def modify_image(original_prompt, modification_prompt):
         client = genai.Client(api_key=os.environ.get("GEMINI_API_KEY"))
-
-        # Combine the original prompt with modification instructions
         combined_prompt = f"{original_prompt} {modification_prompt}"
         
         model = "gemini-2.0-flash-exp-image-generation"
@@ -112,7 +121,8 @@ class ImageGenerator:
             types.Content(
                 role="user",
                 parts=[types.Part.from_text(text=combined_prompt)],
-        )]
+            )
+        ]
         generate_content_config = types.GenerateContentConfig(
             response_modalities=["image", "text"],
             response_mime_type="text/plain",
@@ -141,16 +151,15 @@ class ImageGenerator:
     @staticmethod
     def generate_story(story_prompt, num_images):
         client = genai.Client(api_key=os.environ.get("GEMINI_API_KEY"))
-
         model = "gemini-2.0-flash-exp-image-generation"
         contents = [
             types.Content(
                 role="user",
                 parts=[
                     types.Part.from_text(
-                        text=f"Generate a story about '{story_prompt}'. Start with a brief introduction, "
+                        text=f"Generate a story about {story_prompt}. Start with a brief introduction, "
                              f"then provide exactly {num_images} numbered scenes. Each scene should be a concise "
-                             "paragraph suitable for generating an image"
+                             "paragraph suitable for generating an image. "
                              "For each scene, generate an image. Format the output as:\n"
                              "Introduction: [text]\n"
                              "Scene 1: [text]\n"
@@ -165,7 +174,6 @@ class ImageGenerator:
             response_mime_type="text/plain",
         )
 
-        # Process the streaming response
         story_text = ""
         image_paths = []
         for chunk in client.models.generate_content_stream(
@@ -175,31 +183,30 @@ class ImageGenerator:
         ):
             if not chunk.candidates or not chunk.candidates[0].content or not chunk.candidates[0].content.parts:
                 continue
-            if chunk.candidates[0].content.parts[0].inline_data:
+            part = chunk.candidates[0].content.parts[0]
+            if part.inline_data:
                 timestamp = int(time.time())
                 file_name = f"story_image_{timestamp}"
-                inline_data = chunk.candidates[0].content.parts[0].inline_data
+                inline_data = part.inline_data
                 file_extension = mimetypes.guess_extension(inline_data.mime_type) or ".png"
                 full_file_name = f"{file_name}{file_extension}"
                 saved_path = ImageGenerator.save_binary_file(full_file_name, inline_data.data)
                 print(f"Story image of mime type {inline_data.mime_type} saved to: {saved_path}")
                 image_paths.append(saved_path)
-            else:
-                story_text += chunk.text
+            elif part.text:
+                story_text += part.text
 
-        # Debugging output
         print(f"Debug: Raw story text:\n{story_text}")
         print(f"Debug: Image paths: {image_paths}")
 
-        # Parse the story text into introduction and scenes
         lines = story_text.strip().split('\n')
         introduction = ""
         scenes = []
-        current_scene = None
+        current_scene = ""
 
         for line in lines:
             line = line.strip()
-            if not line:  # Skip empty lines
+            if not line:
                 continue
             if line.startswith("Introduction:"):
                 introduction = line.replace("Introduction:", "").strip()
@@ -213,14 +220,11 @@ class ImageGenerator:
         if current_scene:
             scenes.append(current_scene)
 
-        # Debugging parsed scenes
         print(f"Debug: Parsed scenes: {scenes}")
 
-        # Ensure we have the correct number of scenes and images
         scenes = scenes[:num_images]
         image_paths = image_paths[:num_images]
 
-        # Build the result
         story_result = {'introduction': introduction, 'scenes': []}
         for i, scene in enumerate(scenes):
             scene_text = scene.split(':', 1)[1].strip() if ':' in scene else scene
@@ -237,10 +241,17 @@ if __name__ == "__main__":
     if "GEMINI_API_KEY" not in os.environ:
         print("Error: GEMINI_API_KEY environment variable not set")
     else:
-        story_result = ImageGenerator.generate_story(
-            "a white baby goat going on an adventure in a farm in a 3d cartoon animation style",
-            3
+        # Note: The error occurred in generate_image, but your main calls generate_story.
+        # Fixing the call to match the traceback:
+        # story_result = ImageGenerator.generate_story(
+        #     "a white baby goat going on an adventure in a farm in a 3d cartoon animation style",
+        #     3
+        # )
+        # For the traceback, it seems you might have changed it to generate_image, so let's fix that:
+        image_path, prompt = ImageGenerator.generate_image(
+            "a white baby goat on a farm in a 3d cartoon animation style"
         )
-        print(f"Introduction: {story_result['introduction']}")
-        for scene in story_result['scenes']:
-            print(f"{scene['text']}\nGenerated Image {scene['path']}")
+        if image_path:
+            print(f"Generated Image: {image_path}")
+        else:
+            print("Failed to generate image")
